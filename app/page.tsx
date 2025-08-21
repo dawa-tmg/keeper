@@ -4,7 +4,6 @@ import { McLaren } from 'next/font/google'
 import { useEffect, useState } from 'react';
 import { MdNoteAdd, MdDelete, MdEdit } from "react-icons/md";
 import { CiMenuKebab } from "react-icons/ci";
-import { title } from 'process';
 
 const mclaren = McLaren({
     weight: '400',
@@ -15,14 +14,14 @@ export default function Home() {
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [action, setAction] = useState(false)
+  const [actionID, setActionID] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editID, setEditID] = useState(null)
   const [editNotes, setEditNotes] = useState({title: '', note: ''})
 
 //Get Notes
 const fetchNotes = async ()=>{
-  const res = await fetch('http://localhost:3000/api/notes')
+  const res = await fetch('/api/notes')
   if(!res.ok){
     setError(true)
   }
@@ -50,7 +49,7 @@ const addNote = async (e: React.FormEvent<HTMLFormElement>)=>{
   const formData = new FormData(e.currentTarget);
   const body = Object.fromEntries(formData);
 
-  const add = await fetch('http://localhost:3000/api/notes',{
+  const add = await fetch('/api/notes',{
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(body)
@@ -65,12 +64,12 @@ const addNote = async (e: React.FormEvent<HTMLFormElement>)=>{
 }
 
 //Delete
-  const showActionBtn = ()=>{
-    setAction(true)
+  const showActionBtn = (note: any)=>{
+    setActionID(note.id)
   }
 
   const deleteNote = async(id: any)=>{
-    const del = await fetch(`http://localhost:3000/api/${id}`,{
+    const del = await fetch(`/api/${id}`,{
       method: 'DELETE',
     })
     if(!del.ok){
@@ -78,23 +77,23 @@ const addNote = async (e: React.FormEvent<HTMLFormElement>)=>{
       return
     }
     fetchNotes()
-    setAction(false)
   }
 
 //Edit
 const editNote = (note: any)=>{
   setEditID(note.id)
   setEditNotes({title: note.title, note: note.note})
-  setAction(false)
+  setActionID(false)
 }
 
 const cancelEdit = ()=>{
   setEditID(null)
   setEditNotes({title: '', note: ''})
+  setActionID(false)
 }
 
 const saveEdit = async (id: any)=>{
-  const edit = await fetch(`http://localhost:3000/api/${id}`,{
+  const edit = await fetch(`/api/${id}`,{
     method: 'PUT',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(editNotes)
@@ -117,6 +116,7 @@ const saveEdit = async (id: any)=>{
         <h1 className='text-4xl text-white'>Keeper</h1>
         <MdNoteAdd onClick={showAddNoteForm} className='text-3xl text-white cursor-pointer' />
       </div>
+
     </header>
     <div className='w-[90%] mx-auto grid grid-cols-4 gap-5 py-10'>
       {notes.map((note:any)=>(
@@ -137,13 +137,13 @@ const saveEdit = async (id: any)=>{
               <p className='text-lg mb-3'>{note.note}</p>
             </>
           )}
-          <CiMenuKebab onClick={showActionBtn} className='text-black-500 absolute bottom-2 right-2' />
-          {action && (  
+          <CiMenuKebab onClick={()=>showActionBtn(note)} className='text-black-500 absolute bottom-2 right-2' />
+          {actionID === note.id ? (  
           <div className='bg-gray-300 absolute bottom-0 right-0 rounded flex space-x-2 px-2 py-1'>
             <MdEdit onClick={()=> editNote(note)} className='text-gray-600' />
             <MdDelete onClick={()=> deleteNote(note.id)} className='text-gray-600' />
           </div>
-          )}
+          ): (<></>)}
         </div>
       ))}
     </div>
